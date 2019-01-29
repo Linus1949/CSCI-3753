@@ -1,0 +1,9 @@
+Jan 28 22:58:20 cu-cs-vm kernel: [ 1148.519785] Adding 6 and 8 equals 14
+Jan 28 22:59:35 cu-cs-vm uptimed: moving up to position 6: 0 days, 00:20:23
+Jan 28 23:03:08 cu-cs-vm kernel: [ 1436.616534] Adding 1 and 6 equals 7
+Jan 28 23:03:13 cu-cs-vm kernel: [ 1441.840519] Adding 40 and 77 equals 117
+Jan 28 23:03:19 cu-cs-vm kernel: [ 1446.934974] Adding 25 and 25 equals 50
+Jan 28 23:03:24 cu-cs-vm kernel: [ 1452.693433] Adding 90 and 83 equals 173
+Jan 28 23:03:29 cu-cs-vm kernel: [ 1457.435275] Adding 74 and 38 equals 112
+Jan 28 23:03:35 cu-cs-vm kernel: [ 1463.133525] Adding 95 and 17 equals 112
+Jan 28 23:03:41 cu-cs-vm kernel: [ 1469.803336] Adding 75 and 69 equals 144
