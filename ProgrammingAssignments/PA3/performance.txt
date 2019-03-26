@@ -1,0 +1,82 @@
+As expected, the run time of the program decreased as the number of requester and resolver threads
+increased. However, I did not anticipate that the having more resolver threads instead of 
+requester threads would have a slightly greater impact in lowering the run time. Then again, 
+after reviewing the code I wrote for the requester and resolver handlers, it makes sense since 
+for the requester code I wrote additional checks, which weren't required for the assignment, to 
+ensure the data was being processes correctly, and it also contains more mutex locks, which I 
+suspect would contribute it to having greater overhead. 
+
+This could be illustrated through the different scenarios and on the graph. Having 3 requester 
+with 1 resolver threads didn't lower the run time as much as having 1 requester with 3 resolver 
+threads, and from looking at the graph, you can clearly see that incorporating more resolver 
+threads changed the run time more significantly than including more requester threads. This is 
+reflected by how the run time drops off slightly when there are more requester threads given the 
+same number of resolver threads but the run time lowers much more drastically when there are more 
+resolver threads given the same number of requester threads. Thus, based off the trials and the 
+graph, they definitely support my theory that including more resolver threads rather than 
+requester threads had a greater impact in lowering the run time because of how I implemented the 
+requesters and resolvers.
+
+1.
+Number of requester thread: 10
+Number of resolver thread: 10
+Total runtime: 1368914 microseconds
+Thread 14555 serviced 3 files.
+Thread 14554 serviced 0 files.
+Thread 14553 serviced 2 files.
+Thread 14556 serviced 0 files.
+Thread 14557 serviced 0 files.
+Thread 14560 serviced 0 files.
+Thread 14558 serviced 0 files.
+Thread 14562 serviced 0 files.
+Thread 14561 serviced 0 files.
+Thread 14559 serviced 0 files.
+
+2. 
+Number of requester thread: 5
+Number of resolver thread: 5
+Total runtime: 898793 microseconds
+Thread 14609 serviced 1 files.
+Thread 14606 serviced 1 files.
+Thread 14608 serviced 1 files.
+Thread 14605 serviced 1 files.
+Thread 14607 serviced 1 files.
+
+3.
+Number of requester thread: 4
+Number of resolver thread: 3
+Total runtime: 1096329 microseconds
+Thread 14632 serviced 2 files.
+Thread 14633 serviced 0 files.
+Thread 14631 serviced 3 files.
+Thread 14630 serviced 0 files.
+
+4.
+Number of requester thread: 4
+Number of resolver thread: 8
+Total runtime: 821845 microseconds
+Thread 14672 serviced 1 files.
+Thread 14674 serviced 2 files.
+Thread 14673 serviced 1 files.
+Thread 14675 serviced 1 files.
+
+5.
+Number of requester thread: 8
+Number of resolver thread: 4
+Total runtime: 793811 microseconds
+Thread 14694 serviced 2 files.
+Thread 14696 serviced 0 files.
+Thread 14697 serviced 0 files.
+Thread 14693 serviced 3 files.
+Thread 14695 serviced 0 files.
+Thread 14698 serviced 0 files.
+Thread 14699 serviced 0 files.
+Thread 14700 serviced 0 files.
+
+6.
+Number of requester thread: 3
+Number of resolver thread: 5
+Total runtime: 987159 microseconds
+Thread 14723 serviced 1 files.
+Thread 14722 serviced 2 files.
+Thread 14721 serviced 2 files.
