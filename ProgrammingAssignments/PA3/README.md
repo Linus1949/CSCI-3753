@@ -13,8 +13,8 @@
   -`void* resolve(void *outputFile)`
   
 - <b>multi-lookup.c:</b> This file contains the code to test the DNS lookup.
-- <b>queue.c:</b> This file contains the code to test the DNS lookup.
-- <b>Makefile:</b>
+- <b>queue.c:</b> Implementation of the queue data structure. 
+- <b>Makefile:</b> Commands are `make clean` and `make`.
 
 **To compile the program**:
 - Make sure you are in the right directory (directory with the Makefile)
