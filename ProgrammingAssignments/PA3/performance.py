@@ -48,8 +48,9 @@ def generate_data(exe):
             # Declare parameters and the call arguments for the subprocess.call
             name_files = "names1.txt names2.txt names3.txt names4.txt names5.txt"
             parameters = "%s %s" % (req, res)
-            call_arguments = str("""["%s", "%s", "%s", "results.txt", "serviced.txt", "%s"]""" % ("./"+str(exe), req, res, name_files))
+            # call_arguments = str("""["%s", "%s", "%s", "./output/results.txt", "./output/serviced.txt", "%s"]""" % ("./"+str(exe), req, res, name_files))
             #print(call_arguments)
+            call_arguments = str("""["%s", "%s", "%s", "./output/results.txt", "./output/serviced.txt", "./input/names1.txt", "./input/names2.txt", "./input/names3.txt", "./input/names4.txt", "./input/names5.txt"]""" % ("./"+str(exe), req, res))
 
             # Time the program using timeit
             time = timeit(stmt = "subprocess.call(%s)" % call_arguments, setup = "import subprocess", number=reps) * T_CONVERSION / reps

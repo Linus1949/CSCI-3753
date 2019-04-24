@@ -1,6 +1,6 @@
 #include "multi-lookup.h"
 
-void* request(void* inputFile)
+void* request(void* inputFile) // producer, staging all the files to be resolved
 {
     int tid = syscall(SYS_gettid);
     reqData* request_th = (reqData*) inputFile;
@@ -10,10 +10,10 @@ void* request(void* inputFile)
     pthread_mutex_t* mutX_File = currentPos->mutX_File;
     pthread_mutex_t* mutx_Lock = currentPos->mutX_Lock;
 
-    int firstPosition  = (request_th->data) % currentPos->my_files.size;
+    int firstPosition  = (request_th->data) % currentPos->my_files.size; // allocating the thread to the file number
     int size = currentPos->my_files.size;
 
-    pthread_cond_t* condVar = currentPos->condVar;
+    pthread_cond_t* condVar = currentPos->condVar; // falgs to check whether the queue is empty
     pthread_cond_t* pv = currentPos->condVar_File;
 
     queue* myQ = currentPos->myQ;
@@ -31,15 +31,17 @@ void* request(void* inputFile)
             // critical section
             currentFile = currentPos->my_files.next;
             filePtr =  (FILE*) currentPos->my_files.filePtr[currentFile];
-            int tempVar = (currentFile + 1) % size;
+            int tempVar = (currentFile + 1) % size; // 
 
+            // round robin
             while(1)
             {
+                // if you loop around and get back to the beginning
                 if (tempVar == currentFile)
                 {
                     break;
                 }
-                else if(currentPos->my_files.finished_arr[tempVar] == -1)
+                else if(currentPos->my_files.finished_arr[tempVar] == -1) // if its not done
                 {
                     currentPos->my_files.next = tempVar;
                     break;
@@ -59,28 +61,30 @@ void* request(void* inputFile)
         while(1)
         {
             flockfile(filePtr);
-            if(fgets_unlocked(buff, MAX_NAME_LENGTH, filePtr))
+            if(fgets_unlocked(buff, MAX_NAME_LENGTH, filePtr)) // gets the line and puts in buffer
             {
                 funlockfile(filePtr);
                 pthread_mutex_lock(mutX); // mutex lock
                 // critical section
                 while(queue_full(myQ))
                 {
-                    pthread_cond_wait(pv, mutX); // waiting
+                    pthread_cond_wait(pv, mutX); // if full, waiting
                 }
+                // if not full, put the line in the buffer
+                // malloc to copy data
                 buff[strlen(buff)-1] = '\0';
                 void* cpyData = malloc(strlen(buff)+1);
                 cpyData = (void *) strncpy(cpyData, buff, strlen(buff)+1);
-
+                // and push it into the queue
                 if(queue_push(myQ, cpyData) == -1)
                 {
                     printf("ERROR: Can't send data to the shared array!\n");
                 }
-                pthread_cond_signal(condVar);
+                pthread_cond_signal(condVar); // add it to the shared data
                 pthread_mutex_unlock(mutX); // mutex unlock
                 temp++;
             }
-            else
+            else // at the end of the file
             {
                 funlockfile(filePtr);
                 if(temp == 0)
@@ -94,20 +98,23 @@ void* request(void* inputFile)
 
         pthread_mutex_lock(mutX_File); // locking mutex
         // critical section
+        // checking if the file is not processed yet
         if(currentPos->my_files.finished_arr[currentFile] == -1)
         {
-            currentPos->my_files.finished_arr[currentFile] = 0;
+            currentPos->my_files.finished_arr[currentFile] = 0; // the file is processed
             currentPos->my_files.current++;
         }
         pthread_mutex_unlock(mutX_File); // unlocking mutex
         
+        // processed all the files
         char charArr[50];
         if(currentPos->my_files.size == currentPos->my_files.current)
         {
+            // writing how many files the threads serviced, and putting to the char array
             FILE* curFile = currentPos->service;
             flockfile(curFile);
-            snprintf(charArr, sizeof(charArr), "Thread %d serviced %d files.\n", tid, serve); // writing to the output
-            fputs_unlocked(charArr, curFile);
+            snprintf(charArr, sizeof(charArr), "Thread %d serviced %d files.\n", tid, serve); 
+            fputs_unlocked(charArr, curFile); // writes the buffer to the file
             funlockfile(curFile);
 
             pthread_mutex_lock(mutx_Lock); // mutex lock 
@@ -121,29 +128,29 @@ void* request(void* inputFile)
     pthread_exit(NULL); // returning NULL
 }
 
-void* resolve(void* outputFile)
+void* resolve(void* outputFile) // consumer, get the ip adresses
 {
-    process* currentProcess = (process *) outputFile;
-    queue* myQ = currentProcess->myQ;
+    process* currentProcess = (process *) outputFile; // takes output file
+    queue* myQ = currentProcess->myQ; // inititalize the process, q obj
 
     pthread_mutex_t* mutX = currentProcess->mutX; // mutex
     pthread_mutex_t* mutx_Lock = currentProcess->mutX_Lock; // mutex
     pthread_cond_t* condVar = currentProcess->condVar; // condition variable
     pthread_cond_t* condVar_File = currentProcess->condVar_File; // condition variable
 
-    FILE* filePtr = currentProcess->fileOutput;
-    int* finished = currentProcess->finished;
+    FILE* filePtr = currentProcess->fileOutput; // init file obj
+    int* finished = currentProcess->finished; 
 
     while(1)
     {
         pthread_mutex_lock(mutX); // mutex lock
-        while(queue_empty(myQ) && !(*finished))
+        while(queue_empty(myQ) && !(*finished)) // check if the que is empty and if the requestor thread isnt finished yet
         {
-            pthread_cond_wait(condVar, mutX); // waiting
+            pthread_cond_wait(condVar, mutX); // waiting if the que isnt empty
         }
 
         pthread_mutex_lock(mutx_Lock); // mutex lock 
-        if((*finished) && queue_empty(myQ))
+        if((*finished) && queue_empty(myQ)) // if finished, and if it is empty, if it is then, do the things below
         {
             pthread_mutex_unlock(mutx_Lock); // mutex unlock
             pthread_cond_signal(condVar); // signal
@@ -152,21 +159,23 @@ void* resolve(void* outputFile)
         }
         pthread_mutex_unlock(mutx_Lock); // mutex unlock
         // critical section
-        char* Qdata = (char*) queue_pop(myQ);
+        char* Qdata = (char*) queue_pop(myQ); // accessing the queue, popin data
 
-        pthread_cond_broadcast(condVar_File);
+        pthread_cond_broadcast(condVar_File); // signals all threads that are sleeping, signal just does 1
         pthread_mutex_unlock(mutX);
 
-        char ip_str[INET6_ADDRSTRLEN];
-        char my_data[strlen(Qdata) + 1];
+        char ip_str[INET6_ADDRSTRLEN]; // create buffer
+        char my_data[strlen(Qdata) + 1]; // another buffer
+        // gets the hostname and returns the ip address
         int ip_res = dnslookup(Qdata, ip_str, sizeof(ip_str)); // dnslookup from util
         
-        strncpy(my_data, Qdata, strlen(Qdata) + 1);
-        free(Qdata);
-        strcat(my_data, ",");
+        strncpy(my_data, Qdata, strlen(Qdata) + 1); // copy it from the que to my data
+        free(Qdata); // free the q mane
+        strcat(my_data, ","); // concats , 
 
-        if (ip_res != -1)
+        if (ip_res != -1) // if its !-1, valid
         {
+            // write to the file
             char charOut[125];
             strncpy(charOut, my_data, strlen(my_data)+1);
             strncat(charOut, ip_str, strlen(ip_str));
@@ -176,13 +185,13 @@ void* resolve(void* outputFile)
             fputs_unlocked(charOut, filePtr);
             funlockfile(filePtr);
         }
-        else
+        else // if invalid
         {
-            fprintf(stderr, "ERROR: Bogus Hostname!\n");
+            fprintf(stderr, "ERROR: Bogus Hostname!\n"); // print  bogus mane
             strncat(my_data, "\n", 2);
 
             flockfile(filePtr);
-            fputs_unlocked(my_data, filePtr);
+            fputs_unlocked(my_data, filePtr); // lock file to write to it
 
             funlockfile(filePtr);
         }
@@ -194,6 +203,9 @@ void* resolve(void* outputFile)
 
 int main(int argc, char* argv[])
 {
+    // pass in req thread, res thread, input and output files
+    // where you define all the structs
+
     struct timeval startTime;
     struct timeval endTime;
     gettimeofday(&startTime, NULL); // for the runtime
@@ -208,7 +220,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "ERROR: Input files < 6!\n");
         exit(1); 
     }
-    int argv1Req = atoi(argv[1]);
+    int argv1Req = atoi(argv[1]); // like stoi
     int argv2Res = atoi(argv[2]);
     
     pthread_t request_thread[argv1Req];
@@ -225,6 +237,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
+    // malloc an array 
     int *myArray = (int *) malloc(sizeof(int) * argc-5);
 
     // iterating through the files 
@@ -348,6 +361,7 @@ int main(int argc, char* argv[])
     // stop time and print
     gettimeofday(&endTime, NULL);
     printf("Total runtime: %ld microseconds.\n", (((endTime.tv_sec * 1000000) + endTime.tv_usec) - ((startTime.tv_sec * 1000000) + startTime.tv_usec)));
+    
     
     // closing files
     fclose(services);
